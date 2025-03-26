@@ -1,0 +1,143 @@
+import socket
+import network
+import ujson
+from config import WIFI_CONFIG, MOTOR_CONFIG
+import gc
+
+class WebServer:
+    def __init__(self, motor):
+        self.motor = motor
+        self.setup_wifi()
+        self.socket = socket.socket()
+        self.socket.bind(('0.0.0.0', 80))
+        self.socket.listen(1)
+        print("> Servidor web iniciado")
+
+    def setup_wifi(self):
+        ap = network.WLAN(network.AP_IF)
+        ap.active(True)
+        ap.config(
+            essid=WIFI_CONFIG['ap']['ssid'],
+            password=WIFI_CONFIG['ap']['password'],
+            authmode=WIFI_CONFIG['ap']['authmode']
+        )
+        print(f"> WiFi AP: {ap.ifconfig()[0]}")
+
+    def start(self):
+        while True:
+            client, addr = self.socket.accept()
+            try:
+                request = client.recv(1024).decode()
+                if not request:
+                    continue
+
+                first_line = request.split('\r\n')[0]
+                method, path, _ = first_line.split()
+
+                if path == '/':
+                    path = '/index.html'
+
+                if path.startswith('/api'):
+                    self.handle_api(client, path, request)
+                elif path.startswith('/static/'):
+                    self.serve_file(client, path[1:])
+                else:
+                    self.serve_file(client, 'static/index.html')
+
+            except Exception as e:
+                print("! Error en cliente:", e)
+            finally:
+                client.close()
+                gc.collect()
+
+    def serve_file(self, client, filename):
+        try:
+            with open(filename, 'r') as f:
+                content = f.read()
+            
+            content_type = 'text/plain'
+            if filename.endswith('.html'):
+                content_type = 'text/html'
+            elif filename.endswith('.css'):
+                content_type = 'text/css'
+            elif filename.endswith('.js'):
+                content_type = 'application/javascript'
+            
+            headers = f"HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\n\r\n"
+            client.send(headers)
+            client.send(content)
+        except OSError:
+            client.send("HTTP/1.1 404 Not Found\r\n\r\n")
+
+    def handle_api(self, client, path, request):
+        response = {'status': 'error', 'message': 'Endpoint no encontrado'}
+        
+        try:
+            if path == '/api/status':
+                response = {
+                    'status': 'ok',
+                    'current_angle': self.motor.get_current_angle(),
+                    'rpm': self.motor.current_rpm,
+                    'enabled': self.motor.enabled
+                }
+            
+            elif path.startswith('/api/move?'):
+                params = self.parse_query(path)
+                angle = float(params.get('angle', 0))
+                rpm = float(params.get('rpm', self.motor.current_rpm))
+                
+                if angle % MOTOR_CONFIG['min_angle'] != 0:
+                    response['message'] = f'Ángulo debe ser múltiplo de {MOTOR_CONFIG["min_angle"]}°'
+                else:
+                    self.motor.move_angle(angle, rpm)
+                    response = {
+                        'status': 'ok',
+                        'current_angle': self.motor.get_current_angle()
+                    }
+            
+            elif path.startswith('/api/divide?'):
+                params = self.parse_query(path)
+                divisions = int(params.get('divisions', 0))
+                rpm = float(params.get('rpm', self.motor.current_rpm))
+                
+                if divisions < 2:
+                    response['message'] = 'Mínimo 2 divisiones'
+                else:
+                    angle = self.motor.divide_circle(divisions, rpm)
+                    response = {
+                        'status': 'ok',
+                        'angle_per_division': angle,
+                        'current_angle': self.motor.get_current_angle()
+                    }
+            
+            elif path == '/api/reset':
+                self.motor.reset_position()
+                response = {
+                    'status': 'ok',
+                    'current_angle': 0.0
+                }
+            
+            elif path == '/api/emergency_stop':
+                self.motor.emergency_stop()
+                response = {
+                    'status': 'ok',
+                    'enabled': False
+                }
+                
+        except ValueError as e:
+            response['message'] = f'Error en parámetros: {str(e)}'
+        except Exception as e:
+            response['message'] = f'Error interno: {str(e)}'
+        
+        client.send("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n")
+        client.send(ujson.dumps(response))
+
+    def parse_query(self, path):
+        params = {}
+        if '?' in path:
+            query = path.split('?')[1].split(' ')[0]
+            for pair in query.split('&'):
+                if '=' in pair:
+                    key, value = pair.split('=', 1)
+                    params[key] = value
+        return params

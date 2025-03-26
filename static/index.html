@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-store">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Torno Divisor CNC - Control de Velocidad</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>TORNO DIVISOR CNC  JORGITO</h1>
+            <div class="status" id="connection-status">● Conectado</div>
+        </header>
+
+        <main>
+            <section class="control-panel">
+                <h2>● Control de Velocidad</h2>
+                
+                <div class="form-group">
+                    <label for="rpm">Velocidad (RPM): <span id="current-rpm">60</span></label>
+                    <div class="range-container">
+                        <input type="range" id="rpm-slider" min="1" max="300" value="60" step="1">
+                        <input type="number" id="rpm-input" min="1" max="300" value="60">
+                    </div>
+                    <div class="rpm-labels">
+                        <span>1</span>
+                        <span>150</span>
+                        <span>300</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="divisions">Divisiones del círculo:</label>
+                    <input type="number" id="divisions" min="2" max="360" value="12">
+                </div>
+
+                <div class="button-group">
+                    <button id="divide-btn" class="btn btn-primary">Dividir Círculo</button>
+                    <button id="next-btn" class="btn btn-secondary">Siguiente División</button>
+                </div>
+
+                <div class="form-group precise-control">
+                    <label for="precise-angle">Ángulo exacto (°):</label>
+                    <input type="number" id="precise-angle" step="0.1125" min="0" max="360" placeholder="Ej: 22.5">
+                    <button id="precise-btn" class="btn btn-primary">Mover</button>
+                </div>
+
+                <div class="result" id="operation-result"></div>
+            </section>
+
+            <section class="status-panel">
+                <h2>● Estado Actual</h2>
+                <div class="status-card">
+                    <p>Ángulo actual: <span id="current-angle">0.0000</span>°</p>
+                    <p>División: <span id="current-division">0</span>/<span id="total-divisions">0</span></p>
+                    <p>Ángulo por división: <span id="angle-per-division">0.0000</span>°</p>
+                    <p>Resolución: <span id="resolution">0.1125</span>°</p>
+                    <p>Velocidad máxima: <span id="max-rpm">300</span> RPM</p>
+                </div>
+
+                <div class="visualization">
+                    <div class="circle" id="angle-display">
+                        <div class="marker"></div>
+                    </div>
+                </div>
+
+                <div class="emergency-controls">
+                    <button id="reset-btn" class="btn btn-warning">Reiniciar a 0°</button>
+                    <button id="emergency-btn" class="btn btn-danger">PARADA EMERGENCIA</button>
+                    <button id="enable-btn" class="btn btn-success">Reactivar Motor</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
