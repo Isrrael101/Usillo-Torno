@@ -65,6 +65,7 @@ GND → Tierra común
 - Ajuste de velocidad (1-300 RPM)
 - Parada de emergencia
 - Reinicio a posición cero
+
 ## Estructura de Archivos
 
 /torno-divisor/
