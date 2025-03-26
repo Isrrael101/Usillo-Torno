@@ -66,6 +66,7 @@ GND → Tierra común
 - Parada de emergencia
 - Reinicio a posición cero
 ## Estructura de Archivos
+
 /torno-divisor/
 ├── config.py         # Configuración WiFi y motor
 ├── main.py           # Punto de entrada
