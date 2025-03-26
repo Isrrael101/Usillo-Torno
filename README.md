@@ -69,11 +69,19 @@ GND → Tierra común
 ## Estructura de Archivos
 
 /torno-divisor/
+
 ├── config.py         # Configuración WiFi y motor
+
 ├── main.py           # Punto de entrada
+
 ├── motor.py          # Control del motor
+
 ├── server.py         # Servidor web
+
 └── static/
+
     ├── index.html    # Interfaz web
+    
     ├── style.css     # Estilos
+    
     └── script.js     # Lógica frontend
